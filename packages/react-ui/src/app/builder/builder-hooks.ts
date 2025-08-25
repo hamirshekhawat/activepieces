@@ -10,6 +10,7 @@ import {
 import { usePrevious } from 'react-use';
 import { create, useStore } from 'zustand';
 import { temporal, TemporalState } from 'zundo';
+import { diff } from 'deep-object-diff';
 
 import { Messages } from '@/components/ui/chat/chat-message-list';
 import { flowsApi } from '@/features/flows/lib/flows-api';
@@ -32,6 +33,7 @@ import {
   StepSettings,
   FlowTriggerType,
   Step,
+  isEmpty,
 } from '@activepieces/shared';
 
 import { flowRunUtils } from '../../features/flow-runs/lib/flow-run-utils';
@@ -428,7 +430,8 @@ export const createBuilderStore = (initialState: BuilderInitialState) =>create(t
           };
         });
       },
-      applyOperation: (operation: FlowOperationRequest) =>
+      applyOperation: (operation: FlowOperationRequest) =>{
+        console.log("flowop", flowOperations)
         set((state) => {
           if (state.readonly) {
             console.warn('Cannot apply operation while readonly');
@@ -468,7 +471,7 @@ export const createBuilderStore = (initialState: BuilderInitialState) =>create(t
           };
           flowUpdatesQueue.add(updateRequest);
           return { flowVersion: newFlowVersion };
-        }),
+        })},
       setVersion: (flowVersion: FlowVersion) => {
         const initiallySelectedStep = determineInitiallySelectedStep(
           null,
@@ -721,13 +724,34 @@ export const createBuilderStore = (initialState: BuilderInitialState) =>create(t
     limit: 50,
     partialize: (s) => ({ flowVersion: structuredClone(s.flowVersion) }),
     equality: (past, curr) => {
-      const pastSteps = steps(past.flowVersion); 
-      const currentSteps = steps(curr.flowVersion);
-      console.log("pastSteps, currentSteps",pastSteps, currentSteps)
-      if (pastSteps.size !== currentSteps.size) return false;
-      for (const k of pastSteps) if (!currentSteps.has(k)) return false;
-      return true; 
+      const stateDiff = diff(past, curr);
+      // console.log("past, current",past, curr, stateDiff)
+      // const pastSteps = steps(past.flowVersion); 
+      // const currentSteps = steps(curr.flowVersion);
+      // if (pastSteps.size !== currentSteps.size) return false;
+      // for (const k of pastSteps) if (!currentSteps.has(k)) return false;
+      // return true; 
+      if (isEmpty(stateDiff)) return true;
+      else{ 
+      console.log("past, current",past, curr, stateDiff)
+
+        return false;}
     },
+    // diff: (past, curr) => {
+    //   const myDiff = diff(past, curr);
+    //     const newStateFromDiff = myDiff.reduce(
+    //       (acc, difference) => {
+    //         type Key = keyof typeof curr;
+    //         if (difference.type === 'CHANGE') {
+    //           const pathAsString = difference.path.join('.') as Key;
+    //           acc[pathAsString] = difference.value;
+    //         }
+    //         return acc;
+    //       },
+    //       {} as Partial<typeof curr>,
+    //     );
+    //     return isEmpty(newStateFromDiff) ? null : newStateFromDiff;
+    // }
   }
 ));
 

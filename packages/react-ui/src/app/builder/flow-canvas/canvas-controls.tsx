@@ -295,7 +295,8 @@ const CanvasControls = ({
             <Button
               variant="accent"
               size="sm"
-              onClick={() => undo()}
+              // keyboardShortcut="Z"
+              // onKeyboardShortcut={() => undo()}
             >
               <Undo2 className="w-5 h-5" />
             </Button>
